@@ -1,0 +1,30 @@
+.venv/
+venv/
+env/
+
+.env
+
+__pycache__/
+*.py[cod]
+
+# Streamlit secrets
+**/.streamlit/secrets.toml
+
+# Uploaded documents
+data/uploads/
+
+# Local vector databases
+data/vector_store/
+**/vector_store/
+
+# Local Chroma databases
+**/chroma/
+
+# Local downloaded models
+models/
+
+.vscode/
+.idea/
+
+.DS_Store
+Thumbs.db
