@@ -1,18 +1,18 @@
 # from FlagEmbedding import FlagReranker
 import os
-os.environ["HF_HUB_OFFLINE"] = "1"
 from sentence_transformers import CrossEncoder
 import numpy as np
 import streamlit as st
 from src.database import tokenize
 @st.cache_resource
-def load_reranker():   
-    MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models", "ms-marco-MiniLM-L-6-v2")
-    if not os.path.isdir(MODEL_DIR):
-        st.error(f"Reranker model not found at {MODEL_DIR}. Make sure it's committed to the repo.")
-        st.stop()
-    return CrossEncoder(MODEL_DIR)
-reranker=load_reranker()
+def load_reranker():
+
+    return CrossEncoder(
+        "cross-encoder/ms-marco-MiniLM-L6-v2"
+    )
+
+
+reranker = load_reranker()
 #we can implement rrf with one dictionary and can combine vector_results and bm25_results at a time and loop over them.
 def rrf(vector_results, bm25_results, k=60):
     sun={}
