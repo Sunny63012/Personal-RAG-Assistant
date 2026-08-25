@@ -77,7 +77,7 @@ def generate_response(query,vector_store,bm25,all_chunks,chat_history,tables=Non
         return agg, ["computed directly from table"]
     retrieved_docs=hybrid_search(query,vector_store,bm25,all_chunks)
     if not retrieved_docs:
-        return "I could not find any information"
+        return "I could not find any information",[]
     context="\n".join([doc.page_content for doc in retrieved_docs])
 #     prompt = ChatPromptTemplate.from_messages([
 #     (
