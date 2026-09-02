@@ -30,7 +30,7 @@ def get_embedding_model():
         st.error("NVIDIA_API_KEY is not set. Add it in Streamlit Cloud → Settings → Secrets.")
         st.stop()
     return NVIDIAEmbeddings(
-        model="nvidia/nv-embedqa-e5-v5",
+        model="nvidia/llama-nemotron-embed-300m-v2",
         api_key=key,
         timeout=30,  # fail fast on a hung request instead of waiting indefinitely
     )
