@@ -57,8 +57,8 @@ User uploads files
 |---|---|
 | UI | Streamlit |
 | Orchestration | LangChain |
-| LLM | NVIDIA NIM (`meta/llama-3.1-8b-instruct`) via `langchain-nvidia-ai-endpoints` |
-| Embeddings | NVIDIA `nv-embedqa-e5-v5` |
+| LLM |  (`gemini-3.5-flash`) via `langchain-google-genai` |
+| Embeddings |  gemini-embedding-2|
 | Vector store | ChromaDB (in-memory, per-session) |
 | Keyword search | `rank-bm25` |
 | Reranking | `sentence-transformers` CrossEncoder (`ms-marco-MiniLM-L-6-v2`) |
@@ -99,7 +99,7 @@ Personal_RAG_Assistant/
    pip install -r requirements.txt
    ```
 
-2. **Add your NVIDIA API key** — get one at [build.nvidia.com](https://build.nvidia.com). Use either:
+2. **Add your GEMINI API key** — get one at [build.nvidia.com](https://build.nvidia.com). Use either:
 
    - `.streamlit/secrets.toml`:
      ```toml
