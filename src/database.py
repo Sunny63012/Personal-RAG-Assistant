@@ -1,43 +1,54 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from rank_bm25 import BM25Okapi
 from langchain_core.documents import Document
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from google.api_core.exceptions import ServiceUnavailable, DeadlineExceeded, ResourceExhausted, InternalServerError
 import httpx
 import streamlit as st
 import re
+import time
 import os
 from dotenv import load_dotenv
 load_dotenv() # Load environment variables from .env file
 # DB_DIR = "data/vector_store"
 # os.makedirs(DB_DIR, exist_ok=True)  # Ensure the directory exists
 # #@st.cache_resource
-BATCH_SIZE=50
+
+BATCH_SIZE=20
+BATCH_DELAY_SECONDS = 10
+RETRYABLE = (ServiceUnavailable, DeadlineExceeded, ResourceExhausted, InternalServerError, TimeoutError,httpx.RemoteProtocolError, httpx.ConnectError, httpx.ReadTimeout,)
 def get_api_key():
     # st.secrets works on Streamlit Cloud (Settings -> Secrets).
     # Falls back to a local .env for development.
     try:
-        if "NVIDIA_API_KEY" in st.secrets:
-            return st.secrets["NVIDIA_API_KEY"]
+        if "GOOGLE_API_KEY" in st.secrets:
+            return st.secrets["GOOGLE_API_KEY"]
     except FileNotFoundError:
         pass
-    return os.getenv("NVIDIA_API_KEY")
+    return os.getenv("GOOGLE_API_KEY")
+EMBED_MODEL = "gemini-embedding-2"
 @st.cache_resource
 def get_embedding_model():
+
     key = get_api_key()
+
     if not key:
-        st.error("NVIDIA_API_KEY is not set. Add it in Streamlit Cloud → Settings → Secrets.")
+        st.error(
+            "GOOGLE_API_KEY is not set. "
+            "Add it in Streamlit Cloud → Settings → Secrets."
+        )
         st.stop()
-    return NVIDIAEmbeddings(
-        model="llama-nemotron-embed-vl-1b-v2",
-        api_key=key,
-        timeout=30,  # fail fast on a hung request instead of waiting indefinitely
+
+    return GoogleGenerativeAIEmbeddings(
+        model=EMBED_MODEL,
+        google_api_key=key
     )
 @retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=2, max=15),
-    retry=retry_if_exception_type((httpx.TimeoutException, httpx.ConnectError, TimeoutError)),
+    stop=stop_after_attempt(6),
+    wait=wait_exponential(multiplier=2, min=3, max=90),
+    retry=retry_if_exception_type(RETRYABLE),
     reraise=True,
 )
 def _add_batch(vector_store, batch):
@@ -71,10 +82,12 @@ def create_vector_store(documents):
             _add_batch(vector_store,batch)
         except Exception as e:
             st.error(
-                f"Failed to embed a batch of chunks after 3 retries ({e}). "
+                f"Failed to embed a batch of chunks after several  retries ({e}). "
                 "Some content may be missing from search results."
             )
+            raise e
         progress.progress(min(1.0, (i + BATCH_SIZE) / len(chunks)), text="Embedding your documents...")
+        time.sleep(BATCH_DELAY_SECONDS)
     progress.empty()
     data=vector_store.get()
     all_chunks=[]
