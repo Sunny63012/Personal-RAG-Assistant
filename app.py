@@ -9,6 +9,7 @@ st.set_page_config(
     page_title="Personal RAG Assistant",
     layout="wide")
 st.title("📚 Personal RAG Assistant")
+        
 # --- session state defaults ---
 for key, default in [
     ("messages", []),
