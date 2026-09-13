@@ -1,21 +1,34 @@
-from langchain_nvidia_ai_endpoints import ChatNVIDIA
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
 from src.retriever import hybrid_search
 from src.database import get_api_key
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from google.api_core.exceptions import ServiceUnavailable, DeadlineExceeded, ResourceExhausted, InternalServerError
 import httpx
 import streamlit as st
 from src.structured_query import try_exact_lookup, try_aggregation
 parser=StrOutputParser()
+RETRYABLE = (ServiceUnavailable, DeadlineExceeded, ResourceExhausted, InternalServerError, TimeoutError,httpx.RemoteProtocolError, httpx.ConnectError, httpx.ReadTimeout,)
+CHAT_MODEL = "gemini-3.5-flash"
 @st.cache_resource
 def get_llm():
-    return ChatNVIDIA(
-        model="meta/llama-3.1-8b-instruct",
-        api_key=get_api_key(),
+
+    api_key = get_api_key()
+
+    if not api_key:
+        st.error(
+            "GOOGLE_API_KEY is not set. "
+            "Add it in Streamlit Cloud → Settings → Secrets."
+        )
+        st.stop()
+
+    return ChatGoogleGenerativeAI(
+        model=CHAT_MODEL,
+        google_api_key=api_key,
         temperature=0.2,
-        max_tokens=1024,
-        timeout=45,  # fail fast rather than hang; pairs with the retry below
+        max_output_tokens=1024,
+        timeout=45,
     )
 prompt = ChatPromptTemplate.from_messages([
     (
@@ -61,7 +74,7 @@ Retrieved Context:
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=15),
-    retry=retry_if_exception_type((httpx.TimeoutException, httpx.ConnectError, TimeoutError)),
+    retry=retry_if_exception_type(RETRYABLE),
     reraise=True,
 )
 def _invoke_chain(chain, inputs):
