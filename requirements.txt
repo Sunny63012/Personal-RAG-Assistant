@@ -5,7 +5,7 @@ langchain-core==0.3.74
 langchain-chroma==0.2.5
 langchain-text-splitters==0.3.9
 #langchain-nvidia-ai-endpoints==0.3.16
-langchain-google-genai
+langchain-google-genai==4.4.0
 chromadb==1.0.20
 pymupdf==1.26.3
 python-docx==1.2.0
